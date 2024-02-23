@@ -1,4 +1,4 @@
-- hosts: srv-managednode1
+- hosts: srv-ansibletest
   become: yes
 
 # Changer les variables si nécessaire.
