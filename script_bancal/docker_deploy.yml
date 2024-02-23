@@ -1,5 +1,3 @@
-# ATTENTION : Ce script ne marche qu'une fois et après il ne marche plus. Aucune idée pourquoi.
-
 - hosts: srv-ansibletest
   become: true
   vars:
@@ -8,7 +6,7 @@
     default_container_command: bin/sh
 
   tasks:
-    - name: Install required system packages
+    - name: installation des dépendances/outils en plus
       apt:
         pkg:
           - apt-transport-https
@@ -28,30 +26,37 @@
         state: directory
         mode: '0755'
 
-    - name: Add the GPG key for Docker
-      shell: 'curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
+    - name: On récupère la clé gpg de Docker
+      ansible.builtin.apt_key:
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+        state: present
 
-    - name: Add the repository to fetch the docker package
-      shell: 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye stable" | tee /etc/apt/sources.list.d/docker.list'
+    - name: On ajoute le repo docker dans la source list
+      ansible.builtin.apt_repository:
+        repo: "deb [arch={{ ansible_architecture }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
 
 
-    - name: Update apt and install docker-ce
+    - name: apt update
       apt:
-        name: docker-ce
-        state: latest
         update_cache: true
 
-    - name: Install Docker Module for Python
-      pip:
-        name: docker
-        virtualenv: /mnt/data/virtualenv
 
-    - name: Pull default Docker image
+    - name: Installation de plusieurs options de Docker
+      apt:
+        name:
+          - docker
+          - docker.io
+          - docker-compose
+          - docker-registry
+
+    - name: Pull de l'image voulue
       community.docker.docker_image:
         name: "{{ default_container_image }}"
         source: pull
 
-    - name: Create default containers
+    - name: Création du conteneur à partir de l'image
       community.docker.docker_container:
         name: "{{ default_container_name }}"
         image: "{{ default_container_image }}"
