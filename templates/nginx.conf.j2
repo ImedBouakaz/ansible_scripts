@@ -1,0 +1,11 @@
+# Penser à changer la varaible {{ port }} ici ET dans le déploiement nginx...
+server {
+        listen {{ port }};
+        listen [::]:80;
+        root /var/www/{{ host }};
+        index index.html index.htm index.php
+        server_name _;
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}
