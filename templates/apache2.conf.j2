@@ -1,0 +1,9 @@
+# Les varialbes d'environnements sont modifiables par des chemins absolus " /var/log/apache.log"
+<VirtualHost *:{{ port }}>
+  ServerAdmin webmaster@localhost
+  ServerName {{ host }}
+  ServerAlias www.{{ host }}
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+  DocumentRoot "/var/www/{{ host }}"
+</VirtualHost>
