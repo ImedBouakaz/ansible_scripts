@@ -1,0 +1,52 @@
+- hosts: srv-managednode1
+  become: yes
+
+# Changer les variables si nécessaire.
+# la variable host change aussi le répertoire où sera déployé le site sur la cible.
+  vars:
+    user: "www-data"
+    host: "srv-managednode2"
+    conf: "srv-managednode2.conf"
+    port: "80"
+
+  tasks:
+# Instalation des packages apache et php, dernière version.
+    - name: installation de apache
+      apt:
+        pkg:
+          - apache2
+          - php
+        update_cache: true
+        state: latest
+# Création du répertoire avec les droits mis dessus
+    - name: créer le répertoire pour notre site
+      file:
+        path: "/var/www/{{ host }}"
+        state: directory
+        owner: "{{ user }}"
+        mode: '0755'
+# Création d'un index.html classique vide.
+    - name: création de index.html
+      copy:
+        dest: "/var/www/{{ host }}/index.html"
+        content: |
+          Page Web incroyable
+# Récupération du template jinja2
+    - name: template sites apache
+      template:
+        src:  "/mnt/data/ansible/templates/apache2.conf.j2"
+        dest: "/etc/apache2/sites-available/{{ conf }}"
+# a2ensite sur le nouveau site
+    - name: active le nouveau site
+      command: "/usr/sbin/a2ensite {{ conf }}"
+# a2dissite sur le site par défaut
+    - name: désactive le site par défaut
+      command: "/usr/sbin/a2dissite 000-default.conf"
+# Restart le service apache2
+    - name: restart le service
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: include l'update upgrade
+      import_tasks: /mnt/data/ansible/meta/update.yml
