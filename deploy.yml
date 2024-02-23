@@ -1,0 +1,61 @@
+# Changer l'hôte que l'on déploie.
+- hosts: srv-ansibletest
+  become: yes
+# Le script nous demandera d'insérer le nom d'utilisateur et mdp
+# que l'on veut utiliser pour se connecter à srv-info
+  vars_prompt:
+  - name: smb_username
+    prompt: Insérer nom d'utilisateur de l'AD
+  - name: smb_password
+    prompt: Mot de Passe
+
+  tasks:
+    - name: création de /mnt/data
+      file:
+        path: /mnt/data
+        state: directory
+        mode: '0755'
+
+    - name: création de la parition /dev/sdc1
+      community.general.parted:
+        device: /dev/sdc
+        number: 1
+        state: present
+        fs_type: btrfs
+
+    - name: mettre la partition /dev/sdc1 en btrfs
+      community.general.filesystem:
+        fstype: btrfs
+        dev: /dev/sdc1
+
+    - name: On monte /dev/sdc1 sur /mnt/data
+      ansible.posix.mount:
+        path: /mnt/data
+        src: /dev/sdc1
+        fstype: btrfs
+        state: mounted
+
+    - name: iptable install pour Cortex
+      apt:
+        name: "iptables"
+
+    - name: Installe smbclient pour se connecter au srv-info
+      apt:
+        name: smbclient
+        state: present
+
+    - name: récupère Cortex
+      command:
+        smbclient -U { smb_username }}%{{ smb_password }} //srv-example --directory 'path/I/want' -c "get myfile.deb"
+
+    - name: installe Cortex
+      apt:
+        deb: "/home/administrateur/myfile.deb"
+
+    - name: supprime le fichier d'install
+      file:
+        path: '/home/administrateur/myfile.deb'
+        state: absent
+
+    - name: update && upgrade && dist-upgrade && autoremove
+      ansible.builtin.import_tasks: /mnt/data/ansible/common/update.yml
