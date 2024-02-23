@@ -1,0 +1,10 @@
+# Script copié de linux-update
+- name: apt update && upgrade
+  apt:
+    update_cache: yes
+    upgrade: yes
+
+- name: apt dist upgrade && autoremove
+  apt:
+    upgrade: dist
+    autoremove: true
