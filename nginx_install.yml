@@ -1,0 +1,50 @@
+- hosts: srv-ansibletest
+  become: yes
+  vars:
+    user: "www-data"
+    host: "test"
+    conf: "test.conf"
+    port: "80"
+
+  tasks:
+# Instalation des packages nginx et php, dernière version.
+    - name: installation de nginx/php
+      apt:
+        pkg:
+          - nginx
+          - php
+        update_cache: true
+        state: latest
+# Création du répertoire avec les droits mis dessus
+    - name: créer le répertoire pour notre site
+      ansible.builtin.file:
+        path: "/var/www/{{ host }}"
+        state: directory
+        owner: "{{ user }}"
+        mode: '0755'
+# Création d'un index.html classique vide.
+    - name: création de index.html
+      ansible.builtin.copy:
+        dest: "/var/www/{{ host }}/index.html"
+        content: |
+          <H1>Page Web incroyable<H2>
+    - name: désactivation du site par défaut
+      file:
+        path: "/etc/nginx/site-enabled/default"
+        state: absent
+# Récupération du template jinja2
+    - name: template sites nginx
+      ansible.builtin.template:
+        src:  "/mnt/data/ansible/templates/nginx.conf.j2"
+        dest: "/etc/nginx/sites-available/{{ conf }}"
+# créer un lien symbolique pour activer le nouveau site
+    - name: active le nouveau site
+      file:
+        src: "/etc/nginx/sites-available/{{ conf }}"
+        dest: "/etc/nginx/sites-enabled/{{ conf }}"
+        state: link
+# Restart le service nginx
+    - name: restart le service
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
