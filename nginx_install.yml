@@ -27,7 +27,7 @@
       ansible.builtin.copy:
         dest: "/var/www/{{ host }}/index.html"
         content: |
-          <H1>Page Web incroyable<H2>
+          <H1>Page Web incroyable</H1>
     - name: désactivation du site par défaut
       file:
         path: "/etc/nginx/site-enabled/default"
